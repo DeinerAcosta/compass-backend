@@ -3,15 +3,12 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 
-# 1. Usamos os.getenv para que Render lea la URL desde las Variables de Entorno.
-# Si no existe (en tu PC local), usará la cadena que pongas como segundo parámetro.
+# Lee la URL desde Render. El segundo parámetro es solo un texto falso de relleno para evitar errores locales.
 SQLALCHEMY_DATABASE_URL = os.getenv(
     "DATABASE_URL", 
-    "mysql+pymysql://avnadmin:TU_CLAVE_AIVEN@kafka-cb1dfbb-pruebas-39c8.j.aivencloud.com:16767/defaultdb?ssl_ca=ca.pem"
+    "mysql+pymysql://usuario_falso:clave_falsa@localhost:3306/defaultdb"
 )
 
-# 2. El parámetro 'pool_pre_ping' es vital para conexiones en la nube, 
-# ya que evita errores si Aiven cierra la conexión por inactividad.
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL,
     pool_pre_ping=True,
