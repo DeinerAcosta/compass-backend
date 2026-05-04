@@ -18,10 +18,11 @@ app = FastAPI(title="COMPASS API", version="1.0")
 # Configuración de CORS para permitir conexión desde el Frontend (Live Server)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"],  # Permite todos los orígenes
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["*"],  # Permite todos los métodos (GET, POST, etc.)
+    allow_headers=["*"],  # Permite todos los encabezados
+    expose_headers=["*"]
 )
 
 # --- CONFIGURACIÓN DE SEGURIDAD (Bcrypt) ---
