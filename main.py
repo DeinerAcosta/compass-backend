@@ -16,13 +16,17 @@ models.Base.metadata.create_all(bind=engine)
 app = FastAPI(title="COMPASS API", version="1.0")
 
 # Configuración de CORS para permitir conexión desde el Frontend (Live Server)
+# Configuración de CORS para permitir conexión desde el Frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Permite todos los orígenes
+    allow_origins=[
+        "https://compass-frontend-qp7n.vercel.app",  # Tu página real en Vercel
+        "http://localhost:5500",                     # Por si pruebas en tu PC
+        "http://127.0.0.1:5500"
+    ],
     allow_credentials=True,
-    allow_methods=["*"],  # Permite todos los métodos (GET, POST, etc.)
-    allow_headers=["*"],  # Permite todos los encabezados
-    expose_headers=["*"]
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # --- CONFIGURACIÓN DE SEGURIDAD (Bcrypt) ---
