@@ -89,25 +89,26 @@ def login(user_credentials: schemas.UserLogin, db: Session = Depends(get_db)):
 
 # --- ENDPOINT: Registro de Usuarios ---
 @app.post("/api/auth/register")
-def register_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
-    # 1. Verificamos si el correo ya existe
-    db_user = db.query(models.Usuario).filter(models.Usuario.email == user.email).first()
-    if db_user:
-        raise HTTPException(status_code=400, detail="Este correo ya está registrado")
+def register_user(user: schemas.UserCreate, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
+    # ... (tu código anterior de verificar si el correo existe) ...
     
-    # 2. Encriptamos la contraseña
-    hashed_pw = get_password_hash(user.password)
+    # Lista de correos que tienen permiso de ser administradores
+    ADMINS_AUTORIZADOS = ["gerencia@cofca.com", "desarrollo@cofca.com"]
     
-    # 3. Creamos el usuario (Por defecto entra con rol 'user')
+    # Asignamos el rol basado en la lista
+    rol_asignado = "admin" if user.email in ADMINS_AUTORIZADOS else "user"
+    
     new_user = models.Usuario(
         nombre=user.nombre,
         email=user.email,
-        password_hash=hashed_pw,
+        password_hash=get_password_hash(user.password),
         proceso=user.proceso,
-        rol="user" 
+        rol=rol_asignado  # <--- Usamos la variable con el rol filtrado
     )
     db.add(new_user)
     db.commit()
+    
+    # ... (envío de correo y retorno) ...
     
     return {"status": "success", "message": "Usuario registrado exitosamente"}
 
