@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi import FastAPI, Depends, HTTPException, status, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from typing import List
@@ -90,27 +90,47 @@ def login(user_credentials: schemas.UserLogin, db: Session = Depends(get_db)):
 # --- ENDPOINT: Registro de Usuarios ---
 @app.post("/api/auth/register")
 def register_user(user: schemas.UserCreate, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
-    # ... (tu código anterior de verificar si el correo existe) ...
+    # 1. Verificar si el correo ya existe (¡Fundamental para evitar errores de BD!)
+    db_user = db.query(models.Usuario).filter(models.Usuario.email == user.email).first()
+    if db_user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, 
+            detail="Este correo ya está registrado"
+        )
     
-    # Lista de correos que tienen permiso de ser administradores
+    # 2. Lista de correos autorizados para ser ADMIN
+    # Asegúrate de poner aquí los correos exactos de tu jefe y el tuyo
     ADMINS_AUTORIZADOS = ["gerencia@cofca.com", "desarrollo@cofca.com"]
     
-    # Asignamos el rol basado en la lista
-    rol_asignado = "admin" if user.email in ADMINS_AUTORIZADOS else "user"
+    # Comparamos en minúsculas para evitar errores de dedo
+    rol_asignado = "admin" if user.email.lower() in ADMINS_AUTORIZADOS else "user"
     
+    # 3. Crear el nuevo usuario
     new_user = models.Usuario(
         nombre=user.nombre,
-        email=user.email,
+        email=user.email.lower(), # Guardamos siempre en minúsculas
         password_hash=get_password_hash(user.password),
         proceso=user.proceso,
-        rol=rol_asignado  # <--- Usamos la variable con el rol filtrado
+        rol=rol_asignado
     )
-    db.add(new_user)
-    db.commit()
     
-    # ... (envío de correo y retorno) ...
-    
-    return {"status": "success", "message": "Usuario registrado exitosamente"}
+    try:
+        db.add(new_user)
+        db.commit()
+        db.refresh(new_user)
+        
+        # 4. Enviar correo (Solo si ya tienes configurada la función enviar_correo_bienvenida)
+        # Si aún no la tienes, comenta la siguiente línea para que no falle:
+        # background_tasks.add_task(enviar_correo_bienvenida, user.email, user.nombre)
+        
+        return {
+            "status": "success", 
+            "message": f"Usuario registrado exitosamente como {rol_asignado}"
+        }
+        
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
 
 
 # --- ENDPOINT: Guardar Formulario ---
