@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 from typing import List, Optional
+from datetime import datetime
 
 class KPISchema(BaseModel):
     ind: str
@@ -48,3 +49,27 @@ class UserCreate(BaseModel):
 
 class AnioCreate(BaseModel):
     anio: int
+
+
+# --- Recuperación / Cambio de contraseña ---
+class ForgotPasswordRequest(BaseModel):
+    email: str
+
+class ChangePasswordRequest(BaseModel):
+    email: str
+    current_password: str
+    new_password: str
+
+
+# --- Notificaciones ---
+class NotificacionResponse(BaseModel):
+    id: int
+    tipo: str
+    titulo: str
+    mensaje: Optional[str] = None
+    formulario_id: Optional[str] = None
+    leida: bool
+    created_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True

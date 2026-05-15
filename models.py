@@ -1,5 +1,6 @@
-from sqlalchemy import Boolean, Column, Integer, String, Text, ForeignKey, Enum, JSON
+from sqlalchemy import Boolean, Column, Integer, String, Text, ForeignKey, Enum, JSON, DateTime
 from sqlalchemy.orm import relationship
+from sqlalchemy.sql import func
 import enum
 from database import Base # Importamos la base que creaste en el paso anterior
 
@@ -23,9 +24,11 @@ class Usuario(Base):
     password_hash = Column(String(255), nullable=False)
     proceso = Column(String(100))
     rol = Column(String(20), default="user") # 'admin' o 'user'
+    must_change_password = Column(Boolean, default=False, nullable=False)
 
     # Relación con formularios
     formularios = relationship("Formulario", back_populates="usuario")
+    notificaciones = relationship("Notificacion", back_populates="destinatario", cascade="all, delete-orphan")
 
 class Formulario(Base):
     __tablename__ = "formularios"
@@ -74,6 +77,21 @@ class FormularioKPI(Base):
 
 class AnioActivo(Base):
     __tablename__ = "anios_activos"
-    
+
     id = Column(Integer, primary_key=True, index=True)
     anio = Column(Integer, unique=True, index=True)
+
+
+class Notificacion(Base):
+    __tablename__ = "notificaciones"
+
+    id = Column(Integer, primary_key=True, index=True)
+    usuario_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False, index=True)
+    tipo = Column(String(50), nullable=False)  # 'edicion_solicitada', 'edicion_aprobada', 'info'
+    titulo = Column(String(200), nullable=False)
+    mensaje = Column(Text)
+    formulario_id = Column(String(50), nullable=True)
+    leida = Column(Boolean, default=False, nullable=False, index=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    destinatario = relationship("Usuario", back_populates="notificaciones")
